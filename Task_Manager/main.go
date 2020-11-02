@@ -1,7 +1,27 @@
 package main
 
-import "github.com/atul-wankhade/Gophercises/Task_Manager/cmd"
+//import "Task_Manager/cmd"
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+
+	"github.com/atul-wankhade/Gophercises/Task_Manager/cmd"
+	"github.com/atul-wankhade/Gophercises/Task_Manager/db"
+	homedir "github.com/mitchellh/go-homedir"
+)
 
 func main() {
-	cmd.RootCmd.Execute()
+	home, _ := homedir.Dir()
+	dbPath := filepath.Join(home, "tasks.db")
+	must(db.Init(dbPath))
+	must(cmd.RootCmd.Execute())
+}
+
+func must(err error) {
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
 }
