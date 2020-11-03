@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var listCmd = &cobra.Command{
+var ListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "lists all your task",
 	Run: func(cmd *cobra.Command, args []string) {
@@ -29,5 +29,5 @@ var listCmd = &cobra.Command{
 }
 
 func init() {
-	RootCmd.AddCommand(listCmd)
+	RootCmd.AddCommand(ListCmd)
 }

@@ -16,6 +16,7 @@ func main() {
 	home, _ := homedir.Dir()
 	dbPath := filepath.Join(home, "tasks.db")
 	must(db.Init(dbPath))
+	fmt.Println("Connected to boltDB!")
 	must(cmd.RootCmd.Execute())
 }
 

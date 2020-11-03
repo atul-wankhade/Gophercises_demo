@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+//addCmd is subcommand to add a new task in the database list
 var addCmd = &cobra.Command{
 	Use:   "add",
 	Short: "adds a task to your task list",

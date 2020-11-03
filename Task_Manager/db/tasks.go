@@ -1,3 +1,4 @@
+//Package db contains all functions performing perticular task for perticular command.
 package db
 
 import (
@@ -10,11 +11,13 @@ import (
 var taskBucket = []byte("tasks")
 var db *bolt.DB
 
+//Task struct to store task in database
 type Task struct {
 	Key   int
 	Value string
 }
 
+//Init function to create db connection before main runs
 func Init(dbPath string) error {
 	var err error
 	db, err = bolt.Open(dbPath, 0600, &bolt.Options{Timeout: 1 * time.Second})
@@ -27,6 +30,7 @@ func Init(dbPath string) error {
 	})
 }
 
+//CreateTask function to create new task and add it to database
 func CreateTask(task string) (int, error) {
 	var id int
 	err := db.Update(func(tx *bolt.Tx) error {
@@ -42,6 +46,7 @@ func CreateTask(task string) (int, error) {
 	return id, nil
 }
 
+//AllTasks function to retrieve all tasks present in the database
 func AllTasks() ([]Task, error) {
 	var tasks []Task
 	err := db.View(func(tx *bolt.Tx) error {
@@ -61,6 +66,7 @@ func AllTasks() ([]Task, error) {
 	return tasks, nil
 }
 
+//DeleteTask function to delete the task of provided task no.
 func DeleteTask(key int) error {
 	return db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket(taskBucket)
