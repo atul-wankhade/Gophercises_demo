@@ -13,8 +13,8 @@ import (
 )
 
 func main() {
-	home, _ := homedir.Dir()
-	dbPath := filepath.Join(home, "tasks.db")
+	var Home, _ = homedir.Dir()
+	dbPath := filepath.Join(Home, "tasks.db")
 	must(db.Init(dbPath))
 	fmt.Println("Connected to boltDB!")
 	must(cmd.RootCmd.Execute())

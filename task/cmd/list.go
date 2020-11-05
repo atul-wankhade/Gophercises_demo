@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+//ListCmd command to list all tasks
 var ListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "lists all your task",

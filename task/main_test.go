@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/atul-wankhade/Gophercises/Task_Manager/cmd"
@@ -33,4 +34,8 @@ func Test_ExecuteSubcommand(t *testing.T) {
 		t.Fatal(err)
 	}
 	fmt.Println(string(out))
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(m.Run())
 }
