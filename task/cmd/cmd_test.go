@@ -13,6 +13,11 @@ func Test_DoCommand(t *testing.T) {
 	cmd.Execute()
 }
 
+func Test_RmCommand(t *testing.T) {
+	cmd := rmCmd
+	cmd.Execute()
+}
+
 func Test_ListCommand(t *testing.T) {
 	cmd := ListCmd
 	cmd.Execute()
