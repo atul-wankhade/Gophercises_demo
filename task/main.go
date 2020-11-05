@@ -7,8 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/atul-wankhade/Gophercises/Task_Manager/cmd"
-	"github.com/atul-wankhade/Gophercises/Task_Manager/db"
+	"github.com/atul-wankhade/Gophercises/task/cmd"
+	"github.com/atul-wankhade/Gophercises/task/db"
 	homedir "github.com/mitchellh/go-homedir"
 )
 

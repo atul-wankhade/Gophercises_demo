@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/atul-wankhade/Gophercises/Task_Manager/db"
+	"github.com/atul-wankhade/Gophercises/task/db"
 	"github.com/spf13/cobra"
 )
 
