@@ -2,9 +2,8 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -15,7 +14,6 @@ import (
 
 	"github.com/alecthomas/chroma/formatters/html"
 	"github.com/alecthomas/chroma/lexers"
-	"github.com/alecthomas/chroma/quick"
 	"github.com/alecthomas/chroma/styles"
 )
 
@@ -23,14 +21,14 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/debug/", sourceCodeHandler)
 	mux.HandleFunc("/panic/", panicDemo)
-	mux.HandleFunc("/panic-after/", panicAfterDemo)
-	mux.HandleFunc("/", hello)
-	log.Fatal(http.ListenAndServe(":3000", devMw(mux)))
+	log.Fatal(http.ListenAndServe(":3000", returnHandlerFunc(mux)))
 }
 
+//sourceCodeHandler renders the source code with highlighted lines which has panicked.
 func sourceCodeHandler(w http.ResponseWriter, r *http.Request) {
 	path := r.FormValue("path")
 	lineStr := r.FormValue("line")
+	var fileRead []byte
 	line, err := strconv.Atoi(lineStr)
 	if err != nil {
 		line = -1
@@ -40,62 +38,50 @@ func sourceCodeHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	b := bytes.NewBuffer(nil)
-	_, err = io.Copy(w, file)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+
 	var lines [][2]int
 	if line > 0 {
 		lines = append(lines, [2]int{line, line})
 	}
-	lexer := lexers.Get("go")
-	iterator, err := lexer.Tokenise(nil, b.String())
-	style := styles.Get("github")
-	if style == nil {
-		style = styles.Fallback
+
+	fileRead, err = ioutil.ReadAll(file)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
-	formatter := html.New(html.TabWidth(2), html.WithLineNumbers(true), html.HighlightLines(lines))
+
+	lexer := lexers.Get("go")
+	iterator, err := lexer.Tokenise(nil, string(fileRead))
+	style := styles.Get("dracula")
+	formatter := html.New(html.TabWidth(2), html.WithLineNumbers(true), html.HighlightLines([][2]int{{line, line}}))
+
 	w.Header().Set("Content-Type", "text/html")
+	fmt.Fprint(w, "<style>pre { font-size: 1.2em; }</style>")
 	formatter.Format(w, style, iterator)
-	_ = quick.Highlight(w, b.String(), "go", "html", "monokai")
 
 }
 
-func devMw(app http.Handler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func returnHandlerFunc(app http.Handler) http.HandlerFunc {
+	return func(respWriter http.ResponseWriter, req *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
 				log.Println(err)
 				stack := debug.Stack()
 				log.Println(string(stack))
-				w.WriteHeader(http.StatusInternalServerError)
-				fmt.Fprintf(w, "<h1>panic: %v</h1><pre>%s</pre>", err, makeLinks(string(stack)))
+				respWriter.WriteHeader(http.StatusInternalServerError)
+				fmt.Fprintf(respWriter, "<h1>panic: %v</h1><pre>%s</pre>", err, createLinks(string(stack)))
 			}
 		}()
-		app.ServeHTTP(w, r)
+		app.ServeHTTP(respWriter, req)
 	}
 }
 
 func panicDemo(w http.ResponseWriter, r *http.Request) {
-	funcThatPanics()
-}
-
-func panicAfterDemo(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "<h1>Hello!</h1>")
-	funcThatPanics()
-}
-
-func funcThatPanics() {
 	panic("Oh no!")
 }
 
-func hello(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "<h1>Hello!</h1>")
-}
-
-func makeLinks(stack string) string {
+//createLinks function accepts stack trace in string format and returns string with links to the file which has panicked with line number
+func createLinks(stack string) string {
 	lines := strings.Split(stack, "\n")
 	for li, line := range lines {
 		if len(line) == 0 || line[0] != '\t' {
@@ -109,12 +95,13 @@ func makeLinks(stack string) string {
 				c = c + 1
 			}
 			if ch == ':' && c > 1 {
-				file = line[4:i]
+				file = line[1:i]
 				break
 			}
 		}
+
 		var lineStr strings.Builder
-		for i := len(file) + 5; i < len(line); i++ {
+		for i := len(file) + 2; i < len(line); i++ {
 			if line[i] < '0' || line[i] > '9' {
 				break
 			}

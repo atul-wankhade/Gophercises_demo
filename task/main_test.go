@@ -7,7 +7,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/atul-wankhade/Gophercises/Task_Manager/cmd"
+	"github.com/atul-wankhade/Gophercises/task/cmd"
 )
 
 func Test_ExecuteCommand(t *testing.T) {
