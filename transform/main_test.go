@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -29,7 +30,7 @@ func TestRoot(t *testing.T) {
 	}
 }
 
-func TestUpload(t *testing.T) {
+func TestUpload1(t *testing.T) {
 	go main()
 	time.Sleep(10)
 	client := &http.Client{
@@ -37,49 +38,70 @@ func TestUpload(t *testing.T) {
 			return http.ErrUseLastResponse
 		},
 	}
-	f, _ := os.Open("monalisa.png")
-	values := map[string]io.Reader{
-		"myFile": f,
-	}
-	var b bytes.Buffer
-	w := multipart.NewWriter(&b)
-	for key, r := range values {
-		var fw io.Writer
-		var err error
-		if x, ok := r.(io.Closer); ok {
-			defer x.Close()
-		}
-		if x, ok := r.(*os.File); ok {
-			if fw, err = w.CreateFormFile(key, x.Name()); err != nil {
-				return
-			}
-		}
-		if _, err = io.Copy(fw, r); err != nil {
-			return
-		}
-		if err = w.WriteField("mode", "3"); err != nil {
-			return
-		}
-		if err = w.WriteField("shapes", "50"); err != nil {
-			return
-		}
-		w.Close()
-		req, err := http.NewRequest("POST", "http://localhost:3000/upload", &b)
-		if err != nil {
-			t.Errorf("TestUpload: " + err.Error())
-		}
-		req.Header.Set("Content-Type", w.FormDataContentType())
 
-		// Submit the request
-		res, err := client.Do(req)
-		if err != nil {
-			t.Errorf("TestUpload: Failed to upload image")
-			return
-		}
-		if res.StatusCode != 200 {
-			t.Errorf("TestUpload: Failed to upload image with status code = %d", res.StatusCode)
-			return
-		}
+	file, err := os.Open("monalisa.png")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer file.Close()
+	//buffer to store our request body as buffer
+	var requestBody bytes.Buffer
+
+	//create a multipart writer
+	multipartWriter := multipart.NewWriter(&requestBody)
+
+	//initialize the file feild
+	fileWriter, err := multipartWriter.CreateFormFile("myFile", file.Name())
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	//copy the actual content of the file to the file feilds writer
+	_, err = io.Copy(fileWriter, file)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	feildWriter, err := multipartWriter.CreateFormField("mode")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	_, err = feildWriter.Write([]byte("2"))
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	feildWriter1, err := multipartWriter.CreateFormField("shapes")
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	_, err = feildWriter1.Write([]byte("50"))
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	//we completed adding file and feilds to multipartWriter so now we close it so that it can writes the ending boundry
+	multipartWriter.Close()
+
+	//now we use our original populated request body with our custom request
+	req, err := http.NewRequest("POST", "http://localhost:3000/upload", &requestBody)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	//we need to set the content type from the writer , it includes necessary boundary as well
+	req.Header.Set("Content-Type", multipartWriter.FormDataContentType())
+
+	//do the request
+	response, err := client.Do(req)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	if response.StatusCode != 200 {
+		t.Errorf("TestUpload: Failed to upload image with status code = %d", response.StatusCode)
+		return
 	}
 }
 

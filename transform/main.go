@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -101,13 +100,6 @@ func Upload(w http.ResponseWriter, r *http.Request) {
 	}
 	_ = result
 
-	resultfile, err := ioutil.TempFile("images", "result_*.png")
-	if err != nil {
-		fmt.Println("failed to create temp image")
-	}
-
-	defer os.Remove(resultfile.Name())
-
 	fileBytes2, err := ioutil.ReadAll(outputFile)
 	if err != nil {
 		fmt.Println(err)
@@ -117,7 +109,7 @@ func Upload(w http.ResponseWriter, r *http.Request) {
 
 	// Render the image on to the browser
 	w.Header().Set("Content-Type", "image/jpeg")
-	w.Header().Set("Content-Length", strconv.Itoa(len(fileBytes)))
+	w.Header().Set("Content-Length", strconv.Itoa(len(fileBytes2)))
 	if _, err := w.Write(fileBytes2); err != nil {
 		log.Println("unable to write image.")
 	}
