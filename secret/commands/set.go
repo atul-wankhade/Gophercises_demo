@@ -7,12 +7,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
-//RootCmd is a root command
+//setCmd is a set command which sets your key value in secret file
 var setCmd = &cobra.Command{
 	Use:   "set",
 	Short: "sets the secret key",
 	Run: func(cmd *cobra.Command, args []string) {
 		l := locker.File(encodingkey, secretsPath())
+		//Need minimum two arguments
+		if len(args) < 2 {
+			fmt.Println("Not enough arguments")
+			return
+		}
 		var key, value string
 		key, value = args[0], args[1]
 		err := l.Set(key, value)

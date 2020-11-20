@@ -11,6 +11,7 @@ import (
 
 var encodingkey string
 
+//getCmd is a get command which gets secret from your secret stoarage
 var getCmd = &cobra.Command{
 	Use:   "get",
 	Short: "gets the secret from your secret storage",

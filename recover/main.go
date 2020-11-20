@@ -21,7 +21,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/debug/", sourceCodeHandler)
 	mux.HandleFunc("/panic/", panicDemo)
-	log.Fatal(http.ListenAndServe(":3000", returnHandlerFunc(mux)))
+	log.Fatal(http.ListenAndServe(os.Getenv("PORT"), returnHandlerFunc(mux)))
 }
 
 //sourceCodeHandler renders the source code with highlighted lines which has panicked.
