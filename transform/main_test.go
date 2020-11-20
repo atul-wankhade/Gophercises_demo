@@ -2,14 +2,13 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"testing"
 	"time"
-
-	"github.com/atul-wankhade/Gophercises/transform/processor"
 )
 
 func TestRoot(t *testing.T) {
@@ -30,12 +29,6 @@ func TestRoot(t *testing.T) {
 	}
 }
 
-func TestUpload1(t *testing.T) {
-	go main()
-	time.Sleep(10)
-
-}
-
 func TestUpload(t *testing.T) {
 	go main()
 	time.Sleep(10)
@@ -46,7 +39,7 @@ func TestUpload(t *testing.T) {
 	}
 	f, _ := os.Open("monalisa.png")
 	values := map[string]io.Reader{
-		"file": f,
+		"myFile": f,
 	}
 	var b bytes.Buffer
 	w := multipart.NewWriter(&b)
@@ -62,6 +55,12 @@ func TestUpload(t *testing.T) {
 			}
 		}
 		if _, err = io.Copy(fw, r); err != nil {
+			return
+		}
+		if err = w.WriteField("mode", "3"); err != nil {
+			return
+		}
+		if err = w.WriteField("shapes", "50"); err != nil {
 			return
 		}
 		w.Close()
@@ -84,25 +83,33 @@ func TestUpload(t *testing.T) {
 	}
 }
 
-func TestCreateImage(t *testing.T) {
-	input, err := os.Open("monalisa.png")
+func TestUploadBadRequest(t *testing.T) {
+	go main()
+	time.Sleep(10)
+	resp, err := followURL("POST", "http://localhost:3000/upload")
 	if err != nil {
-		t.Errorf("Failed to open image file")
+		t.Errorf("TestUploadBadRequest: Failed to get upload form")
 	}
-	out, err := createImage(input, "png", 100, processor.ModeCombo)
-	if err != nil || out == "" {
-		t.Errorf("Failed to transform image")
+	if resp.StatusCode != 400 {
+		t.Errorf("TestUploadBadRequest: Failed to get upload form with response code = %d", resp.StatusCode)
 	}
-
 }
 
-// func TestCreateImages(t *testing.T) {
-// 	input, err := os.Open("monalisa.png")
-// 	if err != nil {
-// 		t.Errorf("failed to open image file")
-// 	}
-// 	out, err := createImages(input, "png", Combinations{shapes: 10, mode: processor.ModeCombo})
-// 	if err != nil || len(out) < 1 {
-// 		t.Errorf("Failed to transform images")
-// 	}
-// }
+func followURL(method, path string) (*http.Response, error) {
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	var req *http.Request
+	var resp *http.Response
+	var err error
+	req, _ = http.NewRequest(method, path, nil)
+	resp, err = client.Do(req)
+	fmt.Printf("Request is %v\n", req)
+	fmt.Printf("Response is %v\n", resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, err
+}
